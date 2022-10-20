@@ -1,12 +1,18 @@
 clc
 clear
 
-% The code below generates 10 random integers between 1 and 10
-x = randi([1,10],1,10);
-y = randi([1,10],1,10);
-z = randi([1,10],1,10);
+%% Creating multiple plots on the same graph
 
+x = 0:0.2:10;
+y = sin(x);
 
-subplot(2, 2, 1), plot(x,y);
-subplot(2, 2, 2), plot(y,z);
-subplot(2, 2, 3), plot(x,z);
+plot(x, y);
+
+% Tells matlab to not create a new plot but write on the existing one
+
+hold on 
+z = cos(x);
+plot(x, z);
+
+u = 2.*sin(x);
+scatter(x, u);

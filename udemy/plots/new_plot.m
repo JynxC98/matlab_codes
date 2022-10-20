@@ -1,4 +1,6 @@
 %% Plot 3 function is used to create 3d plots
+clc
+clear
 
 A = [1 2 3 4 5 6];
 B = [2 3 4 -5 6 7];
