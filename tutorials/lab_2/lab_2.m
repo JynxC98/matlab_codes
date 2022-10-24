@@ -19,7 +19,9 @@ function value = newton_rhapson(equation, initial_guess)
     x_new = 0;
     itr = 0;
     while true
-        derivative_ratio = vpa(subs(equation,initial_guess))/vpa(subs(equation_prime, initial_guess));
+        numerator = vpa(subs(equation,initial_guess));
+        denominator = vpa(subs(equation_prime, initial_guess));
+        derivative_ratio = numerator/denominator;
         value = initial_guess - derivative_ratio;
         if (abs(value - x_new) < tolerance)
             break
