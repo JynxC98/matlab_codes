@@ -14,6 +14,9 @@ capital = linspace(30, 80, spaces)';
 rho = 0.9;
 sigma = 0.1;
 m = 3;
+v_inactive_list = zeros(1, spaces);
+v_active_list = zeros(1, spaces);
+
 % Productivity takes 3 states: {Low, medium, high}
 nstates = 3;
 [productivity, probability] = tauchen(nstates, 0, rho, sigma, m);
@@ -23,14 +26,9 @@ itr_kprime = 1;
 value_old = zeros(spaces, nstates); % Guess the initial value of V_0
 value_new = zeros(spaces, nstates); % Update the value of V_1
 
-% Stroing active and inactive investments
-v_inactive_list = zeros(1, spaces);
-v_active_list = zeros(1, spaces);
+k_prime = zeros(spaces, nstates);   % Capital for the next period
 
-% Capital for the next period
-k_prime = zeros(spaces, nstates);   
-
-tolerance = 10;
+tolerance = 15;
 while true
     for itr_capital_value= 1:spaces
         for itr_productivity_value = 1:nstates
@@ -45,8 +43,11 @@ while true
                 v_inactive_list(itr_kprime_value) = v_inactive;
                 v_active = exp(productivity(itr_productivity_value)) ...
                     * capital(itr_capital_value)^(thetha) * lambda - ...
-                    F*capital(itr_capital_value) - p * investment + beta * expected_value;
+                    (gamma/2)*investment^2 - p * investment + beta * expected_value;
                 v_active_list(itr_kprime_value) = v_active;
+                
+
+                  
                 RHS(itr_kprime_value) = max(v_inactive, v_active);
                 itr_kprime = itr_kprime + 1;
             end
@@ -64,100 +65,32 @@ while true
 end
 
 value = value_new;
+
+% Investment Policy Function
 investment = NaN(spaces, nstates);
 for itheta = 1:nstates
     investment(:,itheta) = k_prime(:,itheta) - capital;
 end
+
+% for val = 1: nstates
+%     investment_grid(:, val) = k_prime(:, val) - capital;
+% end
+
 % Plotting value function
 figure(1)
 plot(capital, value(:, 1: nstates), "LineWidth",2);
 xlabel("Capital (K)")
 ylabel("Value Function")
-title("Productivity and Value Function")
 legend("low productivity", "Medium productivity", "high productivity")
+%Plotting v_active and v_inactive
+% figure(2)
+% plot(capital, v_active_list, "LineWidth", 2, Color="red");
+% hold on;
+% plot(capital, v_inactive_list, "LineWidth", 2, Color="green");
 
 figure(2)
-plot(capital, v_active_list, "LineWidth", 2, Color="red");
-hold on;
-plot(capital, v_inactive_list, "LineWidth", 2, Color="green");
-title("Active and Inactive Investment")
-
-figure(3)
 plot(capital,investment(:,1:nstates),'LineWidth',2) % plot graph
 xlabel('K');
 ylabel('I(K,\theta)');
 title('Optimal Investment I(K,\theta)')
 legend('Low Theta \theta_L','Medium Theta \theta_M','High Theta \theta_H')
-
-
-
-
-
-
-
-
-
-
-
-
-function [Z,Zprob] = tauchen(N,mu,rho,sigma,m)
-%Function TAUCHEN
-%
-%Purpose:    Finds a Markov chain whose sample paths
-%            approximate those of the AR(1) process
-%                z(t+1) = (1-rho)*mu + rho * z(t) + eps(t+1)
-%            where eps are normal with stddev sigma
-%
-%Format:     {Z, Zprob} = Tauchen(N,mu,rho,sigma,m)
-%
-%Input:      N       scalar, number of nodes for Z
-%            mu      scalar, unconditional mean of process
-%            rho     scalar
-%            sigma   scalar, std. dev. of epsilons
-%            m       max +- std. devs.
-%
-%Output:     Z       N*1 vector, nodes for Z
-%            Zprob   N*N matrix, transition probabilities
-%
-%    Martin Floden
-%    Fall 1996
-%
-%    This procedure is an implementation of George Tauchen's algorithm
-%    described in Ec. Letters 20 (1986) 177-181.
-%
-
-
-Z     = zeros(N,1);
-Zprob = zeros(N,N);
-a     = (1-rho)*mu;
-
-Z(N)  = m * sqrt(sigma^2 / (1 - rho^2));
-Z(1)  = -Z(N);
-zstep = (Z(N) - Z(1)) / (N - 1);
-
-for i=2:(N-1)
-    Z(i) = Z(1) + zstep * (i - 1);
-end 
-
-Z = Z + a / (1-rho);
-
-for j = 1:N
-    for k = 1:N
-        if k == 1
-            Zprob(j,k) = cdf_normal((Z(1) - a - rho * Z(j) + zstep / 2) / sigma);
-        elseif k == N
-            Zprob(j,k) = 1 - cdf_normal((Z(N) - a - rho * Z(j) - zstep / 2) / sigma);
-        else
-            Zprob(j,k) = cdf_normal((Z(k) - a - rho * Z(j) + zstep / 2) / sigma) - ...
-                         cdf_normal((Z(k) - a - rho * Z(j) - zstep / 2) / sigma);
-        end
-    end
-end
-end
-
-function c = cdf_normal(x)
-    c = 0.5 * erfc(-x/sqrt(2));
-end
-
-
-
